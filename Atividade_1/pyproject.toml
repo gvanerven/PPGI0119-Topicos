@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "BPE_Atividade1_GVANERVEN"
+name = "BPE_PPGI"
 version = "0.0.1"
 authors = [
     { name="Gustavo van Erven", email="gvanerven@gmail.com" },

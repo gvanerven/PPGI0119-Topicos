@@ -1,11 +1,12 @@
 import sys
 from .utils.jsondataset import JSONDataset
-from multiprocessing import Pool
 
+# Code implemented by following the video https://www.youtube.com/watch?v=zduSFxRajkE
 class BPEBase():
     def __init__(self, max_vocab_size):
         self.vocabulary = {idx: bytes([idx]) for idx in range(256)}
         self.max_merges = max_vocab_size - len(self.vocabulary)
+        self.pars = {}
         if self.max_merges < 0:
             self.max_merges = 0
             self.max_vocab_size = len(self.vocabulary)
@@ -16,11 +17,21 @@ class BPEBase():
     def tokenize(self):
         pass
     
-    def encode(self):
-        pass
+    def encode(self, text):
+        tokens = list(map(int, text.encode("utf-8")))
+        while len(tokens) >= 2:
+            stats = self.get_pair_stats(tokens)
+            pair = min(stats, key=lambda p: self.merges.get(p, float("inf")))
+            if pair not in self.merges:
+                return tokens
+            idx = self.merges[pair]
+            tokens = self.merge_pair(tokens, pair, idx)
+        return tokens
     
-    def decode(self):
-        pass
+    def decode(self, ids):
+        tokens = b"".join(self.vocabulary[idx] for idx in ids)
+        text = tokens.decode("utf-8", errors="replace")
+        return text
     
     def train(self, dataset):
         tokens = []
@@ -44,6 +55,7 @@ class BPEBase():
                 aux.append(new_ids)
             tokens = aux
             self.merges[pair] = idx
+            self.pars[idx] = pair
             self.vocabulary[idx] = self.vocabulary[pair[0]] + self.vocabulary[pair[1]]
             
         return self
@@ -72,5 +84,6 @@ if __name__ == "__main__":
     dataset = JSONDataset(dir)
     bpe = BPEBase(max_vocab_size=289)
     bpe.train(dataset)
-    print(bpe.merges)
-    print(bpe.vocabulary)
+    txt = "Teste de codificação."
+    print(list(map(int, txt.encode("utf-8"))))
+    print(bpe.encode(txt))

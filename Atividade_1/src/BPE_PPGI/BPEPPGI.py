@@ -52,6 +52,7 @@ class BPEBase():
                     
         tokens = []
         stats = {}
+        print("Loading dataset...")
         for text in dataset:
             tks = re.findall(pat_str, text)
             lids = [list(map(int, it.encode("utf-8"))) for it in tks]
@@ -59,6 +60,7 @@ class BPEBase():
                 self.get_pair_stats(ids, stats)
             tokens.extend(lids)
             
+        print("Merging...")
         for i in range(max_merges):
             aux = []
             if len(stats) == 0:

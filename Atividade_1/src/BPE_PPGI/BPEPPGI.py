@@ -3,6 +3,7 @@ from .utils.jsondataset import JSONDataset
 import regex as re
 import os
 import joblib
+from tqdm import tqdm
 
 # Code was implemented by following the video https://www.youtube.com/watch?v=zduSFxRajkE
 class BPEBase():
@@ -22,6 +23,7 @@ class BPEBase():
         else:
             self.merges = merges
         
+        
     def tokenize(self, text):
         ids  = self.encode(text)
         tokens = [self.vocabulary[idx].decode("utf-8", errors="replace") for idx in ids]
@@ -29,13 +31,13 @@ class BPEBase():
     
     def encode(self, text):
         tokens = list(map(int, text.encode("utf-8")))
+        stats = self.get_pair_stats(tokens)
         while len(tokens) >= 2:
-            stats = self.get_pair_stats(tokens)
-            pair = min(stats, key=lambda p: self.merges.get(p, float("inf")))
+            pair = min(stats, key=lambda p: self.merges.get(p, float("inf"))) # starts the merges from the minor pair (bottom to top)
             if pair not in self.merges:
                 return tokens
             idx = self.merges[pair]
-            tokens = self.merge_pair(tokens, pair, idx)
+            tokens = self.merge_pair(tokens, pair, idx, stats)
             
         return tokens
     
@@ -44,7 +46,7 @@ class BPEBase():
         text = tokens.decode("utf-8", errors="replace")
         return text
     
-    def train(self, dataset, max_vocab_size, special_tokens_add_list=None):
+    def train(self, dataset, max_vocab_size):
         pat_str = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}++|\p{N}{1,3}+| ?[^\s\p{L}\p{N}]++[\r\n]*+|\s++$|\s*[\r\n]|\s+(?!\S)|\s"""
         max_merges = max_vocab_size - len(self.vocabulary)
         if max_merges < 0:
@@ -53,24 +55,28 @@ class BPEBase():
         tokens = []
         stats = {}
         print("Loading dataset...")
-        for text in dataset:
+        for text in tqdm(dataset):
             tks = re.findall(pat_str, text)
             lids = [list(map(int, it.encode("utf-8"))) for it in tks]
             for ids in lids:
-                self.get_pair_stats(ids, stats)
+                _ = self.get_pair_stats(ids, stats)
             tokens.extend(lids)
             
         print("Merging...")
-        for i in range(max_merges):
+        before = None
+        for i in tqdm(range(max_merges)):
             aux = []
             if len(stats) == 0:
                 break
             pair = max(stats, key=stats.get)
+            
+            if pair == before:
+                break
+            before = pair
             idx = 256 + i
-            stats = {}
+            
             for tks in tokens:
-                new_ids = self.merge_pair(tks, pair, idx) # na lista de tokens, trocar o par pelo idx
-                self.get_pair_stats(new_ids, stats)
+                new_ids = self.merge_pair(tks, pair, idx, stats) # na lista de tokens, trocar o par pelo idx
                 aux.append(new_ids)
             tokens = aux
             self.merges[pair] = idx
@@ -86,16 +92,26 @@ class BPEBase():
             counts[pair] = counts.get(pair, 0) + 1
         return counts
 
-    def merge_pair(self, ids, pair, idx):
+    def merge_pair(self, ids, pair, idx, stats):
         newids = []
         i = 0
+        stats.pop(pair, None) # remove par para substituir pelos pares com novo index
         while i < len(ids):
             if i < len(ids) - 1 and ids[i] == pair[0] and ids[i+1] == pair[1]:
                 newids.append(idx)
-                i += 2
+                if i > 0:
+                    pair = (ids[i-1], idx)
+                    stats[pair] = stats.get(pair, 0) + 1
+                    stats.pop((ids[i-1], ids[i]), None) # remove par com ids anteriores
+                    
+                if i < len(ids) - 2:
+                    pair = (idx, ids[i+2])
+                    stats[pair] = stats.get(pair, 0) + 1
+                    stats.pop((ids[i+1], ids[i+2]), None) # remove par com ids anteriores
+                i += 2 # pula o par 
             else:
                 newids.append(ids[i])
-                i += 1
+                i += 1 # segue para o próximo token
         return newids
     
     def __len__(self):

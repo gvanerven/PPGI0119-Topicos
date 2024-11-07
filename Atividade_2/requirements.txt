@@ -1,0 +1,6 @@
+regex
+joblib
+jupyterlab
+ipywidgets
+tqdm
+transformers

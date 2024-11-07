@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "BIGRAM"
+version = "0.0.1"
+authors = [
+    { name="Gustavo van Erven", email="gvanerven@gmail.com" },
+]
+description = "Implementação do BIGRAM para a disciplina de NLP"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/gvanerven/PPGI0119-Topicos"
+Issues = "https://github.com/gvanerven/PPGI0119-Topicos/issues"

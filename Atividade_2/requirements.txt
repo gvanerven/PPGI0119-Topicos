@@ -4,3 +4,4 @@ jupyterlab
 ipywidgets
 tqdm
 transformers
+nltk

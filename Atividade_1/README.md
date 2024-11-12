@@ -8,7 +8,7 @@ Code was implemented by following the video https://www.youtube.com/watch?v=zduS
 
 > cd Atividade_1
 
->pip install -r requirements.txt
+> pip install -r requirements.txt
 
 > python3 -m build
 

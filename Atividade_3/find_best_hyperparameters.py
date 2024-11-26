@@ -51,6 +51,8 @@ def run_search(args, tokenizer_name, n_tokens, estimators, parameters):
         aux["estimator"] = estimator
         aux["n_tokens"] = n_tokens
         aux["tokenizer"] = tokenizer_name
+        aux["best_estimator"] = gs.best_estimator_
+        aux["best_parameters"] = str(gs.best_params_)
         df = pd.concat([df, aux])
     
     df.to_csv(f"../dados/atv3/results_gs_{dataset_name}.csv", index=False)

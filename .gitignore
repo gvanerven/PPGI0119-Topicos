@@ -165,4 +165,5 @@ dados/*/*.json
 
 tokenizers/tokenizer*
 
+Atividade_4/*-finetune-*
 *.pkl
